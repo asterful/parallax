@@ -32,6 +32,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   return new Response(stream, {
     headers: {
       "Content-Type": "audio/mp4",
+      "Transfer-Encoding": "chunked",
       "Cache-Control": "no-cache",
     },
   });
