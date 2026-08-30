@@ -1,5 +1,6 @@
 FROM node:20-alpine
-RUN apk add --no-cache openssl
+RUN apk add --no-cache openssl python3 py3-pip ffmpeg && \
+    python3 -m pip install --no-cache-dir --break-system-packages yt-dlp
 
 EXPOSE 3000
 

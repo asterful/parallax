@@ -2,9 +2,9 @@
 
 client_id = "f2426b6a785633f7fbc662f3bb184187"
 name = "Parallax"
-handle = "parallax-yt"
-application_url = "https://example.com"
+application_url = "https://shopify-parallax.terosu.com"
 embedded = true
+handle = "parallax-yt"
 
 [build]
 automatically_update_urls_on_dev = true
@@ -13,16 +13,16 @@ automatically_update_urls_on_dev = true
 api_version = "2026-10"
 
   [[webhooks.subscriptions]]
-  topics = [ "app/scopes_update" ]
-  uri = "/webhooks/app/scopes_update"
-
-  [[webhooks.subscriptions]]
   topics = [ "app/uninstalled" ]
   uri = "/webhooks/app/uninstalled"
+
+  [[webhooks.subscriptions]]
+  topics = [ "app/scopes_update" ]
+  uri = "/webhooks/app/scopes_update"
 
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
 scopes = ""
 
 [auth]
-redirect_urls = [ "https://example.com/api/auth" ]
+redirect_urls = [ "https://shopify-parallax.terosu.com/api/auth" ]

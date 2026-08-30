@@ -2,7 +2,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { spawn } from "child_process";
 import { Readable } from "stream";
 
-export const loader = async ({ params }: LoaderFunctionArgs) => {
+export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   const videoId = params.videoId;
   if (!videoId) {
     return new Response("Missing videoId", { status: 400 });
@@ -18,12 +18,20 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
     videoUrl,
   ]);
 
+  // Kill the process immediately if the user disconnects
+  if (request.signal) {
+    request.signal.addEventListener("abort", () => {
+      if (!ytdlp.killed) {
+        ytdlp.kill("SIGTERM");
+      }
+    });
+  }
+
   const stream = Readable.toWeb(ytdlp.stdout) as ReadableStream;
 
   return new Response(stream, {
     headers: {
       "Content-Type": "audio/mp4",
-      "Transfer-Encoding": "chunked",
       "Cache-Control": "no-cache",
     },
   });

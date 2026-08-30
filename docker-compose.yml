@@ -1,0 +1,23 @@
+services:
+  # Service 1: Your Shopify React Router App (with Python, ffmpeg, yt-dlp)
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: parallax-app
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    ports:
+      - "3000:3000"
+
+  # Service 2: Cloudflare Tunnel Daemon
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflare-tunnel
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    command: tunnel --no-autoupdate run
+    depends_on:
+      - app

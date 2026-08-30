@@ -1,8 +1,8 @@
-import { exec } from "child_process";
+import type { LoaderFunctionArgs } from "react-router";
+import { execFile } from "child_process";
 import { promisify } from "util";
 
-const execPromise = promisify(exec);
-const YT_DLP_CMD = "python -m yt_dlp";
+const execFilePromise = promisify(execFile);
 
 export interface SearchItem {
   type: "video" | "playlist";
@@ -12,33 +12,39 @@ export interface SearchItem {
   trackCount?: number;
 }
 
-export const loader = async ({ request }: { request: Request }) => {
+export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
   const query = url.searchParams.get("q")?.trim();
 
-  if (!query) return { results: [] };
+  if (!query) return Response.json({ results: [] });
+
+  const pythonCmd = process.platform === "win32" ? "python" : "python3";
+  const execOptions = {
+    maxBuffer: 10 * 1024 * 1024,
+    signal: request.signal,
+  };
 
   try {
     const isUrl = query.startsWith("http://") || query.startsWith("https://") || query.includes("youtu");
 
-    // ==========================================
-    // 1. DIRECT URL HANDLING
-    // ==========================================
     if (isUrl) {
       const isPlaylistUrl = query.includes("list=");
 
       if (isPlaylistUrl) {
-        // Extract playlist ID from URL
         const playlistIdMatch = query.match(/list=([a-zA-Z0-9_-]+)/);
         const playlistId = playlistIdMatch ? playlistIdMatch[1] : null;
 
-        if (!playlistId) return { results: [] };
+        if (!playlistId) return Response.json({ results: [] });
 
-        const cmd = `${YT_DLP_CMD} --flat-playlist -J "https://www.youtube.com/playlist?list=${playlistId}"`;
-        const { stdout } = await execPromise(cmd, { maxBuffer: 10 * 1024 * 1024 });
+        const { stdout } = await execFilePromise(
+          pythonCmd,
+          ["-m", "yt_dlp", "--flat-playlist", "-J", `https://www.youtube.com/playlist?list=${playlistId}`],
+          execOptions
+        );
+
         const data = JSON.parse(stdout || "{}");
 
-        return {
+        return Response.json({
           results: [
             {
               type: "playlist",
@@ -48,16 +54,14 @@ export const loader = async ({ request }: { request: Request }) => {
               trackCount: data.playlist_count || data.entries?.length || 0,
             },
           ],
-        };
+        });
       } else {
-        // Single Video URL
-        const cmd = `${YT_DLP_CMD} -J "${query}"`;
-        const { stdout } = await execPromise(cmd, { maxBuffer: 10 * 1024 * 1024 });
+        const { stdout } = await execFilePromise(pythonCmd, ["-m", "yt_dlp", "-J", query], execOptions);
         const data = JSON.parse(stdout || "{}");
 
-        if (!data.id) return { results: [] };
+        if (!data.id) return Response.json({ results: [] });
 
-        return {
+        return Response.json({
           results: [
             {
               type: "video",
@@ -66,22 +70,21 @@ export const loader = async ({ request }: { request: Request }) => {
               uploader: data.uploader || data.channel || "YouTube",
             },
           ],
-        };
+        });
       }
     }
 
-    // ==========================================
-    // 2. TEXT QUERY SEARCH
-    // ==========================================
-    const sanitizedQuery = query.replace(/["\\]/g, "");
-
-    const videoCmd = `${YT_DLP_CMD} --flat-playlist -J "ytsearch5:${sanitizedQuery}"`;
     const playlistUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}&sp=EgIQAw%3D%3D`;
-    const playlistCmd = `${YT_DLP_CMD} --flat-playlist --playlist-end 3 -J "${playlistUrl}"`;
 
     const [videoRes, playlistRes] = await Promise.all([
-      execPromise(videoCmd, { maxBuffer: 10 * 1024 * 1024 }).catch(() => ({ stdout: "{}" })),
-      execPromise(playlistCmd, { maxBuffer: 10 * 1024 * 1024 }).catch(() => ({ stdout: "{}" })),
+      execFilePromise(pythonCmd, ["-m", "yt_dlp", "--flat-playlist", "-J", `ytsearch5:${query}`], execOptions).catch(
+        () => ({ stdout: "{}" })
+      ),
+      execFilePromise(
+        pythonCmd,
+        ["-m", "yt_dlp", "--flat-playlist", "--playlist-end", "3", "-J", playlistUrl],
+        execOptions
+      ).catch(() => ({ stdout: "{}" })),
     ]);
 
     const videoData = JSON.parse(videoRes.stdout || "{}");
@@ -116,8 +119,9 @@ export const loader = async ({ request }: { request: Request }) => {
       }
     }
 
-    return { results };
+    return Response.json({ results });
   } catch (error: any) {
+    if (error.name === "AbortError") return Response.json({ results: [] }, { status: 499 });
     console.error("Search Error:", error.message);
     return Response.json({ results: [] }, { status: 500 });
   }
