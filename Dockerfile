@@ -1,6 +1,6 @@
 FROM node:22-alpine
 RUN apk add --no-cache openssl python3 py3-pip ffmpeg && \
-    python3 -m pip install --no-cache-dir --break-system-packages yt-dlp yt-dlp-ejs
+    python3 -m pip install --no-cache-dir --break-system-packages yt-dlp yt-dlp-ejs bgutil-ytdlp-pot-provider
 
 EXPOSE 3000
 
