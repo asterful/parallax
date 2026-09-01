@@ -1,5 +1,7 @@
 # @shopify/shopify-app-template-react-router
 
+#### https://admin.shopify.com/store/6xs2vt-jc/oauth/install_custom_app?client_id=f2426b6a785633f7fbc662f3bb184187&no_redirect=true&signature=eyJleHBpcmVzX2F0IjoxNzg4NTc4MTgwLCJwZXJtYW5lbnRfZG9tYWluIjoiNnhzMnZ0LWpjLm15c2hvcGlmeS5jb20iLCJjbGllbnRfaWQiOiJmMjQyNmI2YTc4NTYzM2Y3ZmJjNjYyZjNiYjE4NDE4NyIsInB1cnBvc2UiOiJjdXN0b21fYXBwIn0%3D--3a45434781c6b543b8daa8a63df48d3f7fdd6313
+
 ## 2026.02.09
 - Add declarative product metafield definition and demonstrate metafield usage in the product creation flow
 - Add declarative metaobject definition and demonstrate metaobject upsert in the product creation flow
